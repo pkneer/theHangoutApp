@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!--[if IE 8]> 				 <html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+
+<head>
+	<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>HangoutApp</title>
+
+  
+  <link rel="stylesheet" href="foundation/css/foundation.min.css">
+
+  <!--script src="foundation/js/vendor/custom.modernizr.js"></script-->
+  <style>
+  	#head{
+	  	background-color:#333;
+	  	color:#eee;
+  	}
+	  #theIcon{
+	  	height:50px;
+	  	width:50px;
+	  	border-radius:25px;
+	  	overflow: hidden;
+	  	margin-left:5px;
+	  	float:left;
+	  	opacity:0;
+	  	}
+	  #theName{
+	  	font-weight:bold;
+	  	margin-left: 70px;
+	  }
+	  .footer{
+	  	margin:10px;
+	  	padding:10px;
+	  	text-align:center;
+		background-color: #666;
+	  }
+	  .footer a, .footer a:link{
+		  color:#fff;
+	  }
+	  h1{color:#5cb046}
+	  button{background-color:#5cb046}
+
+  </style>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-45384102-1', 'kneer.ca');
+  ga('send', 'pageview');
+
+</script>
+
+
+</head>
+<body>
+
+<div id="head" class="row" style="">
+<div class="columns" >
+<div class="columns small-3 large-2"><img src="img/hangout_logo.png" class="left"></div>
+	<h1>Hangout Links</h1>
+	<div class="small-9 large-10 right"><p>A simple app to list your Google Hangout links for the next 24 hours.</p></div>
+</div>
+</div>
+<div id="content" class="row">
+<div class="columns" >
+	<div id="theUser" style="display:none">
+		<div id="theIcon"></div>
+		<div id="theName"><h2></h2></div>
+		<hr>
+	</div>
+	<div id="theCalendar"></div>
+
+   <!--Add a button for the user to click to initiate auth sequence -->
+	<div class="row">
+		<div class="columns large-6 large-offset-3" ><br>	   
+		    <button id="authorize-button" style="visibility: visble" class="expand small">Show My Hangout Links</button>
+		</div>
+	</div>
+</div>
+<div class="row">
+<div class="columns footer">
+	<a href="mailto:pkneer@gmail.com">Questions/Comments</a>
+</div>
+</div>
+</div>
+    <script type="text/javascript">
+
+      var clientId = '567921448193.apps.googleusercontent.com';
+
+      var apiKey = 'AIzaSyBYNV4gHIA-1xDNDvRjZ5wAOQqlpd3N6dg';
+
+      var scopes = 'https://www.googleapis.com/auth/plus.me https://www.googleapis.com/auth/calendar.readonly';
+	  var scopes2 = 'https://www.googleapis.com/auth/calendar.readonly';
+      
+      function handleClientLoad() {
+        // Step 2: Reference the API key
+        gapi.client.setApiKey(apiKey);
+        window.setTimeout(checkAuth,1);
+      }
+
+      function checkAuth() {
+        gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
+        //gapi.auth.authorize({client_id: clientId, scope: scopes2, immediate: true});
+      }
+
+      function handleAuthResult(authResult) {
+        var authorizeButton = document.getElementById('authorize-button');
+        
+        console.log("authorize");
+            
+            
+        if (authResult && !authResult.error) {
+          authorizeButton.style.visibility = 'hidden';
+          makeApiCall();
+        } else {
+          authorizeButton.style.visibility = '';
+          authorizeButton.onclick = handleAuthClick;
+        }
+      }
+
+      function handleAuthClick(event) {
+        // Step 3: get authorization to use private data
+        gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
+        return false;
+      }
+
+      // Load the API and make an API call.  Display the results on the screen.
+      function makeApiCall() {
+
+        console.log("API Call");
+
+        // Step 4: Load the Google+ API
+        //gapi.client.load(name, version, callback)
+        gapi.client.load('plus', 'v1', function() {
+          // Step 5: Assemble the API request
+          var request = gapi.client.plus.people.get({
+            'userId': 'me'
+          });
+                  console.log("API request");
+
+          // Step 6: Execute the API request
+          request.execute(function(resp) {
+          
+          $("#theUser").show();
+          		
+          	console.log(resp);
+          	$("#theIcon").append("<img src='"+resp.image.url+"'>");
+          	$("#theName h2").append(resp.displayName +"<br>");
+          });
+          
+          // Step 7: Execute the calendar API request
+          
+        });
+        
+        gapi.client.load('calendar', 'v3', function() {
+        
+        var date=new Date();
+        var today=new Date(date.getTime() - 1 * 60 * 1000);
+        var tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+        console.log("today: "+today+" | "+tomorrow);
+         var calList=gapi.client.calendar.events.list({
+            'userId': 'me',
+            'calendarId': 'primary',
+            'singleEvents':'true',
+            'timeMax': tomorrow,
+            'timeMin': today
+            
+           
+           //'timeMin': startDate.toISOString(), 
+           //'timeMax': maxDate.toISOString() 
+           
+            //'orderBy' : 'startTime'
+       	     
+          });
+          console.log("Calendar API request");
+          // Step 8: Execute the calendar API request
+          calList.execute(function(calResp) {
+          	console.log(calResp.result);
+          	console.log('length: ' + calResp.result.items);
+          	
+          	$("#theName").append(calResp.summary);
+          	
+          	if (calResp.summary== "adam@yellowpencil.com"){
+	          	$('#theIcon img').attr('src', 'img/troll.png');
+          	}else if(calResp.summary== "alaine@yellowpencil.com"){
+	          	$('#theIcon img').attr('src', 'img/elaine-alaine.jpg');
+          	}else if (calResp.summary== "clement@yellowpencil.com"){
+	          	$('#theIcon img').attr('src', 'img/clement-unicorn.jpg');
+          	}
+          	
+          	
+//          	$("#theIcon").show();
+          	
+          	$( "#theIcon" ).animate({opacity: 1,}, 500);
+				  
+          	
+          	if (calResp.result.items == undefined){
+	          	$("#theCalendar").append( "<h4>Lucky You - no hangouts scheduled for the next 24 hours</h4>");	
+          	}
+          	
+	          	for (var i = 0; i < calResp.result.items.length; i++) {
+	          		//console.log(i +" : "+calResp.items[i].summary + " - " +calResp.items[i].hangoutLink);
+	          		
+	          		if (calResp.items[i].hangoutLink!=undefined){
+	          			
+	          			$("#theCalendar").append( "<h4> <a href='"+calResp.items[i].hangoutLink+"'>"+calResp.items[i].summary+"</a></h4>");	
+	
+	          			console.log(calResp.items[i].start);
+	          			var datetime= calResp.items[i].start.dateTime.split("T");
+	          			
+		          		$("#theCalendar").append( "<div> <strong>Date:</strong> "+datetime[0]+"</div><div> <strong>Start Time:</strong> "+datetime[1]+"</div><hr>");	
+		          		
+	          		}
+	          	
+	          	}
+          	
+          	
+          	
+          	//$("#theUser").append( "<h2>"+calResp.displayName+"</h2>" )
+          });
+          
+          });
+      }
+    </script>
+    
+    <script src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
+
+
+
+  <!--script src="foundation/js/foundation.min.js"></script -->
+  
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  
+  <!--
+  
+  <script src="foundation/js/foundation/foundation.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.interchange.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.abide.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.dropdown.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.placeholder.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.forms.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.alerts.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.magellan.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.reveal.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.tooltips.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.clearing.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.cookie.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.joyride.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.orbit.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.section.js"></script>
+  
+  <script src="foundation/js/foundation/foundation.topbar.js"></script>
+  
+  -->
+  
+  <!--script>
+    $(document).foundation();
+
+    var easter_egg = new Konami();
+	easter_egg.code = function() { $("#thelogo").toggle(); $("#theBeav").toggle();}
+	easter_egg.load();
+</script-->
+</body>
+</html>
